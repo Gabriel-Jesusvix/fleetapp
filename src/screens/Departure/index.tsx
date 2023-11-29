@@ -1,32 +1,33 @@
 import { useEffect, useRef, useState } from 'react';
+import { Alert, ScrollView, TextInput } from 'react-native';
 import { Button } from '../../components/Button';
 import { HeaderDeparture } from '../../components/HeaderDeparture';
 import { LicensePlateInput } from '../../components/LicensePlateInput';
 import { TextAreaInput } from '../../components/TextAreaInput';
-import { Container, Content, Message } from './styles';
-import { TextInput, ScrollView, Alert } from 'react-native';
+import { Container, Content, Message, MessageContent } from './styles';
 
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
-import { licensePlateValidate } from '../../utils/licensePlateValidate';
-import {
-  useForegroundPermissions,
-  watchPositionAsync,
-  LocationAccuracy,
-  LocationSubscription,
-  LocationObjectCoords,
-  requestBackgroundPermissionsAsync
-} from 'expo-location';
 import { useNavigation } from '@react-navigation/native';
 import { useUser } from '@realm/react';
+import {
+  LocationAccuracy,
+  LocationObjectCoords,
+  LocationSubscription,
+  requestBackgroundPermissionsAsync,
+  useForegroundPermissions,
+  watchPositionAsync
+} from 'expo-location';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { licensePlateValidate } from '../../utils/licensePlateValidate';
 
-import { useRealm } from '../../libs/realm';
-import { Historic } from '../../libs/realm/schemas/Historic';
-import { getAddressLocation } from '../../utils/getAddressLocation';
+import { CarSimple } from 'phosphor-react-native';
 import { Loading } from '../../components/Loading';
 import { LocationInfo } from '../../components/LocationInfo';
-import { CarSimple } from 'phosphor-react-native';
 import { Map } from '../../components/Map';
+import { useRealm } from '../../libs/realm';
+import { Historic } from '../../libs/realm/schemas/Historic';
 import { startLocationTask } from '../../tasks/backgroundLocationTask';
+import { getAddressLocation } from '../../utils/getAddressLocation';
+import { openSettings } from '../../utils/openSettings';
 
 
 export function Departure() {
@@ -62,7 +63,11 @@ export function Departure() {
 
       if(!backgroundPermissions.granted) {
         setIsResgistering(false)
-        return Alert.alert('Localização', 'É necessário permitir que o App tenha acesso localização em segundo plano. Acesse as configurações do dispositivo e habilite "Permitir o tempo todo."')
+        return Alert.alert(
+          'Localização', 
+          'É necessário permitir que o App tenha acesso localização em segundo plano. Acesse as configurações do dispositivo e habilite "Permitir o tempo todo."',
+          [{ text: 'Abrir configurações', onPress: openSettings }]
+        )
       }
 
       await startLocationTask();
@@ -72,6 +77,11 @@ export function Departure() {
           user_id: user!.id,
           license_plate: licensePlate,
           description,
+          coords:[{
+            latitude: currentCoords.latitude,
+            longitude: currentCoords.longitude,
+            timestamp: new Date().getTime()
+          }]
         }))
       });
 
@@ -123,11 +133,15 @@ export function Departure() {
     return (
       <Container>
         <HeaderDeparture title='Saída' />
-        <Message>
-          Você precisa permitir que o aplicativo tenha acesso a
-          localização para acessar essa funcionalidade. Por favor, acesse as
-          configurações do seu dispositivo para conceder a permissão ao aplicativo.
-        </Message>
+        <MessageContent>
+          <Message>
+            Você precisa permitir que o aplicativo tenha acesso a 
+            localização para acessar essa funcionalidade. Por favor, acesse as
+            configurações do seu dispositivo para conceder a permissão ao aplicativo.
+          </Message>
+
+          <Button title='Abrir configurações' onPress={openSettings} />
+        </MessageContent>
       </Container>
     )
   }
